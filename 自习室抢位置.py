@@ -362,7 +362,7 @@ def book_seat_withPartner(beginTime, seat_id=0, seatBookers_id=0, duration=3600*
         if(book_seat_state == 'fail' and flag != 1):
             book_seat_msg = book_seat_request_json['DATA']['msg'] + \
                 ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
+    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
         book_seat_msg, book_seat_state = '安排上了', "true"
     return book_seat_msg, book_seat_state
 
