@@ -7,50 +7,49 @@ import time
 import json
 import os
 
-#本脚本由CZ制作，考研期间不喜欢抢位置，所以做了这个，考完之后加上了小伙伴的功能和四个自习室自由选择的功能，然后现在打算分享给大家，不要广为流传，自己默默用就好了=-=
-#本脚本就是填好下面这些需要填的东西就好了，如果想要更改数据，就请停止这个脚本之后再删除同目录下的install.lock这个文件，之后再运行一遍这个脚本就好了，你还可以更改test.json这个文件，反正随便皮
-
-def create_json_____():
-    ____ = open('test.json', 'w', encoding='utf-8-sig')
-    CZ_data = {
-        'usernum': 'stuNum',#你的学号
-        'password': 'ps',#你的密码
+# 创建配置文件
+def create_json_file():
+    file = open('test.json', 'w', encoding='utf-8-sig')
+    CZ_Data = {
+        'usernum': '',#学号
+        'password': '',#密码
         'partnerFlag': 'true',  # 需要加入小伙伴则置为true，默认不需要小伙伴
-        'partnerNum': 'partnerStuNum',#小伙伴的名字
-        'partnerName': 'partnerName',#小伙伴的学号
+        'partnerNum': '',#小伙伴学号
+        'partnerName': '',#小伙伴的姓名
         'wanna_room': '1',  # 1二楼南，2南楼北，3三楼北，4三楼南
-        'wanna_seat': '66',  # 自己想要的位置
+        'wanna_seat': '99',  # 自己想要的位置
         'partnerWannaSeat': '88',  # 小伙伴想要的位置
-        'wanna_duration': '13',  # 想要在自习室待多少小时。。。
+        'wanna_duration': '13',  # 想要在自习室待多久
         # 以上内容需要自己填写
         'name': 'john',
         'cookie': '',
-        'year': '2018',
-        'month': '8',
-        'day': '26',
+        'year': '9012',
+        'month': '9',
+        'day': '9',
         # 'bookUserNum': '1',
         'id': '0',
         'partnerID': '-1',
     }
-    print(CZ_data)
-    json.dump(CZ_data, ____, ensure_ascii=False)
-    ____.close()
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
+    print(CZ_Data)
+    json.dump(CZ_Data, file, ensure_ascii=False)
+    file.close()
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
     print(s)
 
+# 获取Cookies
 def Get_cookie():
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
     if(s['cookie'] != '-1'):
         if(judge_Apply_New_Cookie() == False):
-            cookie_json = Read______json()
+            cookie_json = Read_File_json()
             cookie = cookie_json['cookie']
             return cookie
-    cookie = save_cookie_to_____()
+    cookie = save_cookie_to_file()
     return cookie
 
-
+# 获取现在的时间，返回的形式是YEAR、MONTH、DAY
 def get_now_datetime():
     d = datetime.datetime.now()
     year = int(str(d)[:4])
@@ -58,38 +57,38 @@ def get_now_datetime():
     day = int(str(d)[8:10])
     return year, month, day
 
-
-def get_ApplyTime_from_____():
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
+# 从配置文件获取修改的时间
+def get_ApplyTime_from_File():
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
     year = s['year']
     month = s['month']
     day = s['day']
-    ____.close()
+    file.close()
     return int(year), int(month), int(day)
 
-
-def save_Apply_Time_to_____():
+# 将修改时间储存至文件内
+def save_Apply_Time_to_File():
     year, month, day = get_now_datetime()
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
-    ____.close()
-    ____ = open('test.json', 'w', encoding='utf-8-sig')
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
+    file.close()
+    file = open('test.json', 'w', encoding='utf-8-sig')
     s['year'] = year
     s['month'] = month
     s['day'] = day
-    json.dump(s, ____, ensure_ascii=False)
-    ____.close()
+    json.dump(s, file, ensure_ascii=False)
+    file.close()
 
-
-def save_cookie_to_____(Login_requests='-1'):
+# 将cookies储存到文件中
+def save_cookie_to_file(Login_requests='-1'):
     if(Login_requests == '-1'):
         Login_requests = get_user_Info()
     Login_requests.json()
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
-    ____.close()
-    ____ = open('test.json', 'w', encoding='utf-8-sig')
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
+    file.close()
+    file = open('test.json', 'w', encoding='utf-8-sig')
     cookies = Login_requests.cookies
     true_cookie = ''
     for cookie in cookies:
@@ -97,14 +96,14 @@ def save_cookie_to_____(Login_requests='-1'):
         true_cookie += str(cookie)[7:-temp_len] + ';'
     true_cookie = true_cookie[1:-1]
     s['cookie'] = true_cookie
-    json.dump(s, ____, ensure_ascii=False)
-    ____.close()
-    save_Apply_Time_to_____()
+    json.dump(s, file, ensure_ascii=False)
+    file.close()
+    save_Apply_Time_to_File()
     return true_cookie
 
-
+# 判断是否需要更新Cookies
 def judge_Apply_New_Cookie():
-    year, month, day = get_ApplyTime_from_____()
+    year, month, day = get_ApplyTime_from_File()
     applied_datetime = datetime.datetime(year, month, day)
     now_datetime = datetime.datetime.now()
     Interval_time = int((now_datetime - applied_datetime).total_seconds())
@@ -112,25 +111,33 @@ def judge_Apply_New_Cookie():
         return False
     return True
 
-
-def Read______json():
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
-    ____.close()
+# 读取配置文件
+def Read_File_json():
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
+    file.close()
     return s
 
-
+# 获取用户信息，用户姓名、ID等
 def get_user_Info():
     headers = {
-        
-        #自己探索
-
+        'accept': 'application/json, text/plain, */*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Connection': 'keep-alive',
+        'Content-Length': '299',
+        'content-type': 'application/json',
+        'Cookie': 'web_language=zh-CN',
+        'Host': 'jxnu.huitu.zhishulib.com',
+        'Origin': 'https://jxnu.huitu.zhishulib.com',
+        'Referer': 'https://jxnu.huitu.zhishulib.com/',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Mobile Safari/537.36'
     }
-    saved_json = Read______json()
+    saved_json = Read_File_json()
     user_num = saved_json['usernum']
     user_password = saved_json['password']
     Login_Signature_requests = requests.get(
-        'login?forwardAPI')
+        'https://jxnu.huitu.zhishulib.com/User/Index/login?forward=/Seat/Index/searchSeats?space_category%5Bcategory_id%5D=591&space_category%5Bcontent_id%5D=36&LAB_JSON=1')
     Login_Signature_Json = Login_Signature_requests.json()
     Login_Signature_Json
     Login_code = Login_Signature_Json['content']['data']['code']
@@ -142,47 +149,49 @@ def get_user_Info():
         "str": Login_str
     }
     Login_requests = requests.post(
-        'loginAPI', headers=headers, data=json.dumps(payload))
+        'https://jxnu.huitu.zhishulib.com/api/1/login', headers=headers, data=json.dumps(payload))
     return Login_requests
 
+# 获取同伴的ID
 def get_partnerID(name,stu_num):
     print("get partnerID")
     search_user_id_content = {'name': name, 'student_number': stu_num}
     search_user_id_request = requests.post(
-        'judgeNameStudentNumberAPI', data=search_user_id_content, headers=get_headers())
+        'https://jxnu.huitu.zhishulib.com/User/Index/judgeNameStudentNumber?LAB_JSON=1', data=search_user_id_content, headers=get_headers())
     search_user_id_json = search_user_id_request.json()
     print("\n partnerID",search_user_id_json['DATA']['user_id'])
     return search_user_id_json['DATA']['user_id']
 
-def renew______json():
+# 更新配置文件
+def renew_file_json():
     user_Info_request = get_user_Info()
     user_Info_json = user_Info_request.json()
-    ____ = open('test.json', 'r', encoding='utf-8-sig')
-    s = json.load(____)
-    ____.close()
-    ____ = open('test.json', 'w', encoding='utf-8-sig')
+    file = open('test.json', 'r', encoding='utf-8-sig')
+    s = json.load(file)
+    file.close()
+    file = open('test.json', 'w', encoding='utf-8-sig')
     s['name'] = user_Info_json['name']
     s['id'] = user_Info_json['id']
-    json.dump(s, ____, ensure_ascii=False)
-    ____.close()
+    json.dump(s, file, ensure_ascii=False)
+    file.close()
     if s['partnerFlag'] == 'true':
         s['partnerID'] = get_partnerID(s['partnerName'], s['partnerNum'])
-    ____ = open('test.json', 'w', encoding='utf-8-sig')  # 不要更改这段否则你会后悔的
-    json.dump(s, ____, ensure_ascii=False)
-    ____.close()
-    save_cookie_to_____(user_Info_request)
-    save_Apply_Time_to_____()
+    file = open('test.json', 'w', encoding='utf-8-sig')
+    json.dump(s, file, ensure_ascii=False)
+    file.close()
+    save_cookie_to_file(user_Info_request)
+    save_Apply_Time_to_File()
 
-
+# 初始化系统
 def init_book():
     if(os.path.exists('install.lock') != True):
-        create_json_____()
-        renew______json()
+        create_json_file()
+        renew_file_json()
         open('install.lock', 'w')
     headers = get_headers()
     return headers
 
-
+# 获取真正的自习室ID
 def get_true_start_seat_num(room):
     return {
         1: 36,
@@ -191,7 +200,7 @@ def get_true_start_seat_num(room):
         4: 37,
     }[room]
 
-
+# 计算开始时间
 def cal_begin_time(d2=0, time=9):
     must_seconds = 3600
     d1 = datetime.datetime(1970, 1, 1)
@@ -202,7 +211,7 @@ def cal_begin_time(d2=0, time=9):
     date = date*3600*24 + must_seconds*(time - 8) + must_seconds*24
     return date
 
-
+# 获取响应头
 def get_headers():
     headers = {
                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36',
@@ -214,7 +223,7 @@ def get_headers():
                }
     return headers
 
-
+# 查找位置ID
 def search_seats(beginTime, wanna_seat=0, duration=9, content_id=36, num=1, category_id=591):
     paired_seat = 0
     # seat_state = 0
@@ -222,7 +231,7 @@ def search_seats(beginTime, wanna_seat=0, duration=9, content_id=36, num=1, cate
     search_seat_content = {'beginTime': beginTime, 'duration': duration, 'num': num,
                            'space_category[category_id]': category_id, 'space_category[content_id]': content_id}
     search_seats_request = requests.post(
-        'searchSeatsAPI', data=search_seat_content, headers=headers)
+        'https://jxnu.huitu.zhishulib.com/Seat/Index/searchSeats?LAB_JSON=1', data=search_seat_content, headers=headers)
     search_seats_json = search_seats_request.json()
     if(wanna_seat == 0):
         paired_seat = search_seats_json['data']['bestPairSeats']['seats'][0]['id']
@@ -232,28 +241,28 @@ def search_seats(beginTime, wanna_seat=0, duration=9, content_id=36, num=1, cate
         # seat_state = search_seats_json['data']['POIs'][-wanna_seat]['state']
     return int(paired_seat)
 
-
+# 查找用户ID
 def search_user_id(name, stu_num):
     headers = get_headers()
     search_user_id_content = {'name': name, 'student_number': stu_num}
     search_user_id_request = requests.post(
-        'judgeNameStudentNumberAPI', data=search_user_id_content, headers=headers)
+        'https://jxnu.huitu.zhishulib.com/User/Index/judgeNameStudentNumber?LAB_JSON=1', data=search_user_id_content, headers=headers)
     search_user_id_json = search_user_id_request.json()
     return search_user_id_json['DATA']['user_id']
 
-
+# 发送位置预约的请求
 def send_book_seat_requests(book_seat_content, headers):
     try:
         print('sending request ', datetime.datetime.now())
         book_seat_request = requests.post(
-            'bookSeatAPI', data=book_seat_content, headers=headers, timeout=2)
+            'https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=2)
         return True, book_seat_request
     except:
         print('timeout ', datetime.datetime.now())
         return False, None
 
-
-def book_seat(beginTime, seat_id=0, seatBookers_id=0, duration=3600*3):
+# 抢位置
+def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
     headers = get_headers()
     flag = 0
     times = 0
@@ -308,15 +317,14 @@ def book_seat(beginTime, seat_id=0, seatBookers_id=0, duration=3600*3):
         book_seat_msg, book_seat_state = '安排上了', "true"
     return book_seat_msg, book_seat_state
 
-def book_seat_withPartner(beginTime, seat_id=0, seatBookers_id=0, duration=3600*3,partnerID=0,partnerWannaSeat=0):
-    #为了效率考虑才复制了上面那个函数，所以不要自作聪明
+# 和同伴一起抢位置
+def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3,partnerID=0,partnerWannaSeat=0):
     headers = get_headers()
     flag = 0
     times = 0
     book_seat_state = 'f'
     book_seat_msg = '搞事情'
     time.sleep(60.3)
-    #这个sleep时间自己调到最合适的
     book_seat_content = {'beginTime': beginTime, 'duration': duration,
                         'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id,'seats[1]':partnerWannaSeat,'seatBookers[1]':partnerID}
     request_state, book_seat_request = send_book_seat_requests(
@@ -338,7 +346,7 @@ def book_seat_withPartner(beginTime, seat_id=0, seatBookers_id=0, duration=3600*
         seat_id -= 0 if looptimes % 3 != 0 else 1
         partnerWannaSeat -= 0 if looptimes % 3 != 0 else 1
         book_seat_content = {'beginTime': beginTime, 'duration': duration,
-                           'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
+                             'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id, 'seats[1]': partnerWannaSeat, 'seatBookers[1]': partnerID}
         request_state, book_seat_request = send_book_seat_requests(
             book_seat_content, headers)
         while request_state == False or book_seat_request.status_code != 200:
@@ -362,45 +370,49 @@ def book_seat_withPartner(beginTime, seat_id=0, seatBookers_id=0, duration=3600*
         if(book_seat_state == 'fail' and flag != 1):
             book_seat_msg = book_seat_request_json['DATA']['msg'] + \
                 ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
+    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
         book_seat_msg, book_seat_state = '安排上了', "true"
+    else:
+        book_seat_msg, book_seat_state = '没抢到', "false"
     return book_seat_msg, book_seat_state
 
-
+# 向Swever酱发送消息以进行消息通知
 def send_msg(msg='快来见抢座位程序最后一面啦~', state='false'):
     r = requests.post(
-        'https://sc.ftqq.com/token.send?text='+msg)#此次加入通知，可以去了解一下这个微信推送的方式！直接替换token就行了
+        'https://sc.ftqq.com/'+你的消息通知平台的Token+'.send?text='+msg)
     r = r.json()
     print(msg, r['errmsg'], state, datetime.datetime.now())
 
-
+# 抢位置的前序管理
 def job():
     print("I'm working...", datetime.datetime.now())
-    _____json_info = Read______json()
+    file_json_info = Read_File_json()
     BeginTime = cal_begin_time()
-    wanna_duration = 3600*int(_____json_info['wanna_duration'])
-    seat_id = search_seats(BeginTime, int(_____json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(_____json_info['wanna_room'])))
+    wanna_duration = 3600*int(file_json_info['wanna_duration'])
+    seat_id = search_seats(BeginTime, int(file_json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(file_json_info['wanna_room'])))
     print(seat_id)
     seat_id = int(seat_id)
-    partnerFlag = _____json_info['partnerFlag']
+    partnerFlag = file_json_info['partnerFlag']
     if partnerFlag == 'true':
-        partnerID = _____json_info['partnerID']
+        print("with_partner\n")
+        partnerID = file_json_info['partnerID']
         partnerWannaSeat = search_seats(BeginTime, int(
-            _____json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(_____json_info['wanna_room'])))
+            file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
+        print(partnerWannaSeat)
         book_seat_msg, book_seat_state = book_seat_withPartner(
-            BeginTime, seat_id, _____json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
+            BeginTime, seat_id, file_json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
     else:
         book_seat_msg, book_seat_state = book_seat_withPartner(
-            BeginTime, seat_id, _____json_info['id'], wanna_duration)
+            BeginTime, seat_id, file_json_info['id'], wanna_duration)
     send_msg(book_seat_msg, book_seat_state)
 
-
+# schedule使用函数，用于定时启动
 schedule.every().day.at("21:59").do(job)
 
+# 主函数
 if __name__ == "__main__":
     init_book()
     print('滴滴滴，开始给你盯着位置啦！', datetime.datetime.now())
     while True:
         schedule.run_pending()
         time.sleep(1)
-    # job()
