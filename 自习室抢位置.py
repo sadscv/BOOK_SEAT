@@ -313,7 +313,7 @@ def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
         if(book_seat_state == 'fail' and flag != 1):
             book_seat_msg = book_seat_request_json['DATA']['msg'] + \
                 ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
+    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
         book_seat_msg, book_seat_state = '安排上了', "true"
     return book_seat_msg, book_seat_state
 
@@ -370,18 +370,36 @@ def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, durati
         if(book_seat_state == 'fail' and flag != 1):
             book_seat_msg = book_seat_request_json['DATA']['msg'] + \
                 ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
-        book_seat_msg, book_seat_state = '安排上了', "true"
+    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
+        book_seat_msg, book_seat_state = get_booked_seat_info(), "true"
     else:
         book_seat_msg, book_seat_state = '没抢到', "false"
     return book_seat_msg, book_seat_state
 
-# 向Swever酱发送消息以进行消息通知
+# 向Server酱发送消息以进行消息通知
 def send_msg(msg='快来见抢座位程序最后一面啦~', state='false'):
     r = requests.post(
-        'https://sc.ftqq.com/'+你的消息通知平台的Token+'.send?text='+msg)
+        'https://sc.ftqq.com/'+ Server酱的Token +'.send?text=位置预约系统的来信&desp={}'.format(msg))
     r = r.json()
     print(msg, r['errmsg'], state, datetime.datetime.now())
+
+def get_booked_seat_info():
+    headers = get_headers()
+    temp = requests.get('https://jxnu.huitu.zhishulib.com/Seat/Index/myBookingList?LAB_JSON=1',headers = headers)
+    a = temp.json()
+    seatNum = a['content']['defaultItems'][0]['seatNum']#位置
+    roomName = a['content']['defaultItems'][0]['roomName']#自习室名
+    startTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(int(a['content']['defaultItems'][0]['time'])))#开始时间
+    endTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(int(a['content']['defaultItems'][0]['time'])+int(a['content']['defaultItems'][0]['duration'])))#结束时间
+    html_content = '''
+    <p>您预约的位置信息如下：</p>
+    <p>自习室名称：{}</p>
+    <p>座号：{}</p>
+    <p>开始时间：{}</p>
+    <p>结束时间：{}</p>
+    <p>记得定好闹钟哦！</p>
+    '''.format(str(roomName), str(seatNum), str(startTime),str(endTime))
+    return html_content
 
 # 抢位置的前序管理
 def job():
