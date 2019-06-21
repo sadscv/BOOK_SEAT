@@ -166,6 +166,7 @@ def get_partnerID(name,stu_num):
 def renew_file_json():
     user_Info_request = get_user_Info()
     user_Info_json = user_Info_request.json()
+    save_cookie_to_file(user_Info_request)
     file = open('test.json', 'r', encoding='utf-8-sig')
     s = json.load(file)
     file.close()
@@ -179,7 +180,6 @@ def renew_file_json():
     file = open('test.json', 'w', encoding='utf-8-sig')
     json.dump(s, file, ensure_ascii=False)
     file.close()
-    save_cookie_to_file(user_Info_request)
     save_Apply_Time_to_File()
 
 # 初始化系统
