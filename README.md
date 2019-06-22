@@ -33,6 +33,9 @@ pip install schedule
 ​        'partnerWannaSeat': '88',  # 小伙伴想要的位置，需要加入小伙伴则写
 
 ​        'wanna_duration': '13',  # 想要在自习室待多久
+
+        'startTime': '9',  # 想要开始的时间
+
 ```
 
 通知问题：使用[server酱](http://sc.ftqq.com)进行通知，先前往server酱官网进行申请与绑定，得到一个server酱的Token，将此Token替换脚本内这个函数内的
@@ -42,9 +45,7 @@ pip install schedule
 
 def send_msg(msg='快来见抢座位程序最后一面啦~', state='false'):
 
-​    r = requests.post(
-
-​        'https://sc.ftqq.com/'+ Server酱的Token +'.send?text=位置预约系统的来信&desp={}'.format(msg))
+​    r = requests.post('https://sc.ftqq.com/{}.send?text=位置预约系统的来信&desp={}'.format(Server酱的Token, msg))
 
 ​    r = r.json()
 
@@ -65,7 +66,7 @@ python3 自习室抢位置.py
 
 如果想要初始化，就请停止这个脚本之后再删除同目录下的install.lock这个文件，之后再运行一遍这个脚本就好了。
 
-想要调整位置信息可以更改test.json这个文件，反正随便皮。
+想要调整位置信息可以直接更改test.json这个文件，不用停止脚步，反正随便皮。
 
 ## PS
 
@@ -99,3 +100,11 @@ python3 自习室抢位置.py
 
 4.更新了README.MD，让脚本更易用
 
+
+2019年6月22日 19点19分
+
+1.加了能够修改开始时间的功能。没办法，这个脚本都是因为自己懒才写的，所以少功能啥的也正常哦！想要什么功能或者改进加个issue哦！
+
+2.修改了小伙伴相关的bug，以前测试是在已经有json的情况下进行的，没有测试完全初始化的情况。
+
+3.顺手增加了一点点注释，真的是一点点！
