@@ -18,23 +18,23 @@ pip install schedule
 ```python
 ​        'usernum': '',#学号
 
-​        'password': '',#密码
+        'password': '',#密码
 
-​        'partnerFlag': 'true',  # 需要加入小伙伴则置为true，默认不需要小伙伴
+        'partnerFlag': 'true',  # 需要加入小伙伴则置为true,不用则为false。** 如果加入小伙伴则与小伙伴相关的内容都需要填写，并且正确！ **
 
-​        'partnerNum': '',#小伙伴学号,需要加入小伙伴则填写
+        'partnerNum': '',#小伙伴学号
 
-​        'partnerName': '',#小伙伴的姓名，需要加入小伙伴则写
-
-​        'wanna_room': '1',  # 1二楼南，2南楼北，3三楼北，4三楼南
-
-​        'wanna_seat': '99',  # 自己想要的位置
-
-​        'partnerWannaSeat': '88',  # 小伙伴想要的位置，需要加入小伙伴则写
-
-​        'wanna_duration': '13',  # 想要在自习室待多久
-
-        'startTime': '9',  # 想要开始的时间
+        'partnerName': '',#小伙伴的姓名,一定要和学号匹配！否则程序无法正常运行
+        
+        'wanna_room': '1',  # 1二楼南，2南楼北，3三楼北，4三楼南
+        
+        'wanna_seat': '99',  # 自己想要的位置
+        
+        'startTime': '9',  #想要开始的时间
+        
+        'partnerWannaSeat': '88',  # 小伙伴想要的位置
+        
+        'wanna_duration': '13',  # 想要在自习室待多久
 
 ```
 
