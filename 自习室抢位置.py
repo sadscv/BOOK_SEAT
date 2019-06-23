@@ -391,7 +391,7 @@ def send_msg(msg='快来见抢座位程序最后一面啦~', state='false'):
 def get_booked_seat_info():
     try:
         headers = get_headers()
-        temp = requests.get('https://jxnu.huitu.zhishulib.com/Seat/Index/myBookingList?LAB_JSON=1',headers = headers， timeout=3)
+        temp = requests.get('https://jxnu.huitu.zhishulib.com/Seat/Index/myBookingList?LAB_JSON=1',headers = headers, timeout=3)
         a = temp.json()
     except:
         return 'TimeOut'
