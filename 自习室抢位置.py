@@ -13,11 +13,12 @@ def create_json_file():
     CZ_Data = {
         'usernum': '',#学号
         'password': '',#密码
-        'partnerFlag': 'true',  # 需要加入小伙伴则置为true，默认不需要小伙伴
+        'partnerFlag': 'true',  # 需要加入小伙伴则置为true,不用则为false。如果加入小伙伴则与小伙伴相关的内容都需要填写，并且正确！
         'partnerNum': '',#小伙伴学号
-        'partnerName': '',#小伙伴的姓名
+        'partnerName': '',#小伙伴的姓名,一定要和学号匹配！否则程序无法正常运行
         'wanna_room': '1',  # 1二楼南，2南楼北，3三楼北，4三楼南
         'wanna_seat': '99',  # 自己想要的位置
+        'startTime': '9',  #想要开始的时间
         'partnerWannaSeat': '88',  # 小伙伴想要的位置
         'wanna_duration': '13',  # 想要在自习室待多久
         # 以上内容需要自己填写
@@ -107,8 +108,9 @@ def judge_Apply_New_Cookie():
     applied_datetime = datetime.datetime(year, month, day)
     now_datetime = datetime.datetime.now()
     Interval_time = int((now_datetime - applied_datetime).total_seconds())
-    if Interval_time < 29*3600*24:
+    if Interval_time < 29*3600*24:  # 当这个cookie的使用时间高于一个月则更新cookie
         return False
+    print('需要更新cookie了！')
     return True
 
 # 读取配置文件
@@ -166,7 +168,7 @@ def get_partnerID(name,stu_num):
 def renew_file_json():
     user_Info_request = get_user_Info()
     user_Info_json = user_Info_request.json()
-    save_cookie_to_file(user_Info_request)
+    save_cookie_to_file(user_Info_request)  # 先将cookie保存至cookie，这样才能获取小伙伴的id，否则会报未登录的错误
     file = open('test.json', 'r', encoding='utf-8-sig')
     s = json.load(file)
     file.close()
@@ -268,7 +270,7 @@ def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
     times = 0
     book_seat_state = 'f'
     book_seat_msg = '搞事情'
-    time.sleep(60.3)
+    time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
     book_seat_content = {'beginTime': beginTime, 'duration': duration,
                          'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
     request_state, book_seat_request = send_book_seat_requests(
@@ -324,7 +326,7 @@ def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, durati
     times = 0
     book_seat_state = 'f'
     book_seat_msg = '搞事情'
-    time.sleep(60.3)
+    time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
     book_seat_content = {'beginTime': beginTime, 'duration': duration,
                         'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id,'seats[1]':partnerWannaSeat,'seatBookers[1]':partnerID}
     request_state, book_seat_request = send_book_seat_requests(
@@ -372,21 +374,27 @@ def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, durati
                 ','+'都尝试过了，还是被占了'
     if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
         book_seat_msg, book_seat_state = get_booked_seat_info(), "true"
+        while(book_seat_msg == 'TimeOut'):
+            book_seat_msg = get_booked_seat_info
     else:
         book_seat_msg, book_seat_state = '没抢到', "false"
     return book_seat_msg, book_seat_state
 
 # 向Server酱发送消息以进行消息通知
 def send_msg(msg='快来见抢座位程序最后一面啦~', state='false'):
-    r = requests.post(
-        'https://sc.ftqq.com/'+ Server酱的Token +'.send?text=位置预约系统的来信&desp={}'.format(msg))
+    r = requests.post('https://sc.ftqq.com/{}.send?text=位置预约系统的来信&desp={}'.format(Server酱的Token, msg))
     r = r.json()
     print(msg, r['errmsg'], state, datetime.datetime.now())
+    return
 
+#获取预约的位置具体信息
 def get_booked_seat_info():
-    headers = get_headers()
-    temp = requests.get('https://jxnu.huitu.zhishulib.com/Seat/Index/myBookingList?LAB_JSON=1',headers = headers)
-    a = temp.json()
+    try:
+        headers = get_headers()
+        temp = requests.get('https://jxnu.huitu.zhishulib.com/Seat/Index/myBookingList?LAB_JSON=1',headers = headers, timeout=3)
+        a = temp.json()
+    except:
+        return 'TimeOut'
     seatNum = a['content']['defaultItems'][0]['seatNum']#位置
     roomName = a['content']['defaultItems'][0]['roomName']#自习室名
     startTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(int(a['content']['defaultItems'][0]['time'])))#开始时间
@@ -405,7 +413,8 @@ def get_booked_seat_info():
 def job():
     print("I'm working...", datetime.datetime.now())
     file_json_info = Read_File_json()
-    BeginTime = cal_begin_time()
+    BeginTime = cal_begin_time(0,int(file_json_info['startTime']))
+    print(BeginTime, file_json_info['startTime'])
     wanna_duration = 3600*int(file_json_info['wanna_duration'])
     seat_id = search_seats(BeginTime, int(file_json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(file_json_info['wanna_room'])))
     print(seat_id)
@@ -416,12 +425,11 @@ def job():
         partnerID = file_json_info['partnerID']
         partnerWannaSeat = search_seats(BeginTime, int(
             file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
-        print(partnerWannaSeat)
-        book_seat_msg, book_seat_state = book_seat_withPartner(
-            BeginTime, seat_id, file_json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
+        # print(partnerWannaSeat, '有小伙伴')
+        book_seat_msg, book_seat_state = book_seat_withPartner(BeginTime, seat_id, file_json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
     else:
-        book_seat_msg, book_seat_state = book_seat_withPartner(
-            BeginTime, seat_id, file_json_info['id'], wanna_duration)
+        # print('没小伙伴')
+        book_seat_msg, book_seat_state = book_seat(BeginTime, seat_id, file_json_info['id'], wanna_duration)
     send_msg(book_seat_msg, book_seat_state)
 
 # schedule使用函数，用于定时启动
