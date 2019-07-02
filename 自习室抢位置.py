@@ -203,14 +203,16 @@ def get_true_start_seat_num(room):
     }[room]
 
 # 计算开始时间
-def cal_begin_time(d2=0, time=9):
+def cal_begin_time(flag=0, time=9): #这个flag用于标志是预约今天的位置还是明天的。0：今天；其他：明天。
     must_seconds = 3600
     d1 = datetime.datetime(1970, 1, 1)
-    if(d2 == 0):
-        d2 = datetime.datetime.now()
+    # if(d2 == 0):
+    d2 = datetime.datetime.now()
     date = d2-d1
     date = int(date.days)
-    date = date*3600*24 + must_seconds*(time - 8) + must_seconds*24
+    date = date*3600*24 + must_seconds*(time - 8)
+    if flag == 0:
+        date += must_seconds*24
     return date
 
 # 获取响应头
@@ -442,3 +444,6 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
+    # job()
+    #如果想要测试这个程序，就把上面这个while循环注释了，然后job()取消注释，在bookseat/bookseatwithpartner这两个函数中的time.sleep(60.3)给相应的注释了。
+    #这样就可以立马测试程序而不需要等待到晚上。
