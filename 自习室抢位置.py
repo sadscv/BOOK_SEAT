@@ -1,11 +1,16 @@
 #import something
 import datetime
 import requests
-import schedule
+# import schedule
 import random
 import time
 import json
 import os
+import sys
+
+# 将所有的输出重定向到文件中
+f = open('test.log', 'a', encoding='utf-8-sig')
+sys.stdout = f
 
 # 创建配置文件
 def create_json_file():
@@ -13,7 +18,7 @@ def create_json_file():
     CZ_Data = {
         'usernum': '',#学号
         'password': '',#密码
-        'partnerFlag': 'true',  # 需要加入小伙伴则置为true,不用则为false。如果加入小伙伴则与小伙伴相关的内容都需要填写，并且正确！
+        'partnerFlag': 'false',  # 需要加入小伙伴则置为true,不用则为false。如果加入小伙伴则与小伙伴相关的内容都需要填写，并且正确！
         'partnerNum': '',#小伙伴学号
         'partnerName': '',#小伙伴的姓名,一定要和学号匹配！否则程序无法正常运行
         'wanna_room': '1',  # 1二楼南，2南楼北，3三楼北，4三楼南
@@ -25,7 +30,7 @@ def create_json_file():
         'name': 'john',
         'cookie': '',
         'year': '9012',
-        'month': '9',
+        'month': '9',   
         'day': '9',
         # 'bookUserNum': '1',
         'id': '0',
@@ -57,6 +62,13 @@ def get_now_datetime():
     month = int(str(d)[5:7])
     day = int(str(d)[8:10])
     return year, month, day
+
+def GetNowHourMinSec():
+    d = datetime.datetime.now()
+    hour = int(str(d)[11:13])
+    miniute = int(str(d)[14:16])
+    seconds = int(str(d)[17:19])
+    return hour, miniute,seconds
 
 # 从配置文件获取修改的时间
 def get_ApplyTime_from_File():
@@ -258,8 +270,8 @@ def search_user_id(name, stu_num):
 def send_book_seat_requests(book_seat_content, headers):
     try:
         print('sending request ', datetime.datetime.now())
-        book_seat_request = requests.post(
-            'https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=2)
+        reqS = requests.Session()
+        book_seat_request = reqS.post('https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=3)
         return True, book_seat_request
     except:
         print('timeout ', datetime.datetime.now())
@@ -272,52 +284,55 @@ def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
     times = 0
     book_seat_state = 'f'
     book_seat_msg = '搞事情'
-    time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
-    book_seat_content = {'beginTime': beginTime, 'duration': duration,
-                         'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
-    request_state, book_seat_request = send_book_seat_requests(
-        book_seat_content, headers)
+    # time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
+    Hour,Mins,Secs = GetNowHourMinSec()
+    while Hour != 21 or Mins != 59 or Secs != 59:
+        Hour,Mins,Secs = GetNowHourMinSec()
+        # print(Hour,Mins,Secs)
+        time.sleep(0.8)
+        # 只要还没有到21：59：59那就一直sleep
+    book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
+    #提前发送是为了能够及时建立TCP连接，提高成功率。
+    request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
     while request_state == False or book_seat_request.status_code != 200:
         times = times + 1
-        time.sleep(1)
-        request_state, book_seat_request = send_book_seat_requests(
-            book_seat_content, headers)
-        print(times, '次尝试 ', datetime.datetime.now())
+        time.sleep(1) #依旧是因为服务器原因添加的，自己决定数值大小。
+        request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
+        print('{}次尝试, 时间：{}'.format(times,datetime.datetime.now()))
         if(times == 20):
             break
     book_seat_request_json = book_seat_request.json()
     looptimes = 1
-    while(book_seat_request_json['DATA']['result'] == 'fail' and looptimes <= 10):
-        print(book_seat_request_json['DATA']['msg'],
-              '\n现在开始尝试备用位置', datetime.datetime.now())
+    while(book_seat_request_json['DATA']['result'] == 'fail' and looptimes <= 12):
+        print(book_seat_request_json['DATA']['msg'], '\n现在开始尝试备用位置', datetime.datetime.now())
         times = 0
         seat_id -= 0 if looptimes % 3 != 0 else 1
-        book_seat_content = {'beginTime': beginTime, 'duration': duration,
-                             'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
-        request_state, book_seat_request = send_book_seat_requests(
-            book_seat_content, headers)
+        book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
+        request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
         while request_state == False or book_seat_request.status_code != 200:
             times = times + 1
-            time.sleep(1)
-            request_state, book_seat_request = send_book_seat_requests(
-                book_seat_content, headers)
+            request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
             print(times, '次尝试 ', datetime.datetime.now())
             if(times == 20):
                 break
-        book_seat_request_json = book_seat_request.json()
-        book_seat_state = book_seat_request_json['DATA']['result']
-        time.sleep(0.3)
-        looptimes += 1
         try:
+            book_seat_request_json = book_seat_request.json()
+            book_seat_state = book_seat_request_json['DATA']['result']
+            looptimes += 1
+        # try:
             if('已有的预约' in book_seat_request_json['DATA']['msg']):
                 flag = 1
                 break
+            if('选择的位置无法预约' in book_seat_request_json['DATA']['msg']):
+                seat_id -= 1
         except:
             continue
-        if(book_seat_state == 'fail' and flag != 1):
-            book_seat_msg = book_seat_request_json['DATA']['msg'] + \
-                ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
+    if(book_seat_state == 'fail' and flag != 1):
+        try:
+            book_seat_msg = book_seat_request_json['DATA']['msg'] + ', 都尝试过了，还是被占了'
+        except:
+            book_seat_msg = '很抱歉的通知你，我真的努力了，奈何大家的学习热情真的太高了，我。。。没能帮你抢到位置，所以自己再去捡漏吧。'
+    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
         book_seat_msg, book_seat_state = '安排上了', "true"
     return book_seat_msg, book_seat_state
 
@@ -416,6 +431,7 @@ def job():
     print("I'm working...", datetime.datetime.now())
     file_json_info = Read_File_json()
     BeginTime = cal_begin_time(0,int(file_json_info['startTime']))
+    # BeginTime = cal_begin_time(1,int(file_json_info['startTime'])) #如果需要预约今天的位置就注释上一行，用这一行
     print(BeginTime, file_json_info['startTime'])
     wanna_duration = 3600*int(file_json_info['wanna_duration'])
     seat_id = search_seats(BeginTime, int(file_json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(file_json_info['wanna_room'])))
@@ -435,15 +451,24 @@ def job():
     send_msg(book_seat_msg, book_seat_state)
 
 # schedule使用函数，用于定时启动
-schedule.every().day.at("21:59").do(job)
+# schedule.every().day.at("21:59").do(job)
 
 # 主函数
 if __name__ == "__main__":
     init_book()
     print('滴滴滴，开始给你盯着位置啦！', datetime.datetime.now())
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        # schedule.run_pending()
+        # time.sleep(1)
+        Hour,Mins,Secs = GetNowHourMinSec()
+        if Hour == 21 and Mins == 59:
+            print(' 开始预约， 时间：{}'.format(datetime.datetime.now()))
+            try: # 增加try可以防止出现意外而导致程序意外退出。
+                job()
+            except:
+                print('预约失败，时间：{}'.format(datetime.datetime.now()))
+                pass
+        time.sleep(5)
     # job()
     #如果想要测试这个程序，就把上面这个while循环注释了，然后job()取消注释，在bookseat/bookseatwithpartner这两个函数中的time.sleep(60.3)给相应的注释了。
     #这样就可以立马测试程序而不需要等待到晚上。
