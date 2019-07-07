@@ -39,7 +39,9 @@ pip install requests
 
 ```
 </br>
+
 通知问题：使用[server酱](http://sc.ftqq.com)进行通知，先前往server酱官网进行申请与绑定，得到一个server酱的Token，将此Token替换脚本内这个函数内的
+
 </br>
 
 ```python

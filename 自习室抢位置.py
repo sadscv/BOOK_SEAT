@@ -271,7 +271,7 @@ def send_book_seat_requests(book_seat_content, headers):
     try:
         print('sending request ', datetime.datetime.now())
         reqS = requests.Session()
-        book_seat_request = reqS.post('https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=3)
+        book_seat_request = reqS.post('https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=3.2)
         return True, book_seat_request
     except:
         print('timeout ', datetime.datetime.now())
@@ -332,7 +332,8 @@ def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
             book_seat_msg = book_seat_request_json['DATA']['msg'] + ', 都尝试过了，还是被占了'
         except:
             book_seat_msg = '很抱歉的通知你，我真的努力了，奈何大家的学习热情真的太高了，我。。。没能帮你抢到位置，所以自己再去捡漏吧。'
-    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
+    # if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
+    if(flag == 1): # 哪里要什么判断，就这么简单粗暴，不服？不服顺着网线找我啊！
         book_seat_msg, book_seat_state = '安排上了', "true"
     return book_seat_msg, book_seat_state
 
@@ -441,8 +442,7 @@ def job():
     if partnerFlag == 'true':
         print("with_partner\n")
         partnerID = file_json_info['partnerID']
-        partnerWannaSeat = search_seats(BeginTime, int(
-            file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
+        partnerWannaSeat = search_seats(BeginTime, int(file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
         # print(partnerWannaSeat, '有小伙伴')
         book_seat_msg, book_seat_state = book_seat_withPartner(BeginTime, seat_id, file_json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
     else:
