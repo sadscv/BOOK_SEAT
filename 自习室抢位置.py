@@ -271,130 +271,115 @@ def send_book_seat_requests(book_seat_content, headers):
     try:
         print('sending request ', datetime.datetime.now())
         reqS = requests.Session()
-        book_seat_request = reqS.post('https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=3)
+        book_seat_request = reqS.post('https://jxnu.huitu.zhishulib.com/Seat/Index/bookSeats?LAB_JSON=1', data=book_seat_content, headers=headers, timeout=3.2)
         return True, book_seat_request
     except:
         print('timeout ', datetime.datetime.now())
         return False, None
 
-# 抢位置
-def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3):
+# 预约位置，根据状态不同进行相应的操作
+def book_seat(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3): 
     headers = get_headers()
-    flag = 0
-    times = 0
-    book_seat_state = 'f'
+    flag = 0 # 已有预约的标记
+    times = 0 # 请求发送次数的计数器
+    book_seat_state = 'fail'
     book_seat_msg = '搞事情'
-    # time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
     Hour,Mins,Secs = GetNowHourMinSec()
-    while Hour != 21 or Mins != 59 or Secs != 59:
+    while Hour != 21 or Mins != 59 or Secs != 59: # 只要还没有到21：59：59那就一直休息
         Hour,Mins,Secs = GetNowHourMinSec()
-        # print(Hour,Mins,Secs)
-        time.sleep(0.8)
-        # 只要还没有到21：59：59那就一直sleep
-    book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
-    #提前发送是为了能够及时建立TCP连接，提高成功率。
-    request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
-    while request_state == False or book_seat_request.status_code != 200:
-        times = times + 1
-        time.sleep(1) #依旧是因为服务器原因添加的，自己决定数值大小。
-        request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
-        print('{}次尝试, 时间：{}'.format(times,datetime.datetime.now()))
-        if(times == 20):
-            break
-    book_seat_request_json = book_seat_request.json()
-    looptimes = 1
-    while(book_seat_request_json['DATA']['result'] == 'fail' and looptimes <= 12):
-        print(book_seat_request_json['DATA']['msg'], '\n现在开始尝试备用位置', datetime.datetime.now())
-        times = 0
-        seat_id -= 0 if looptimes % 3 != 0 else 1
+        time.sleep(0.5)
+    book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id} # 拼装数据字典
+    request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers) # 发送请求
+    looptimes = 0 # 用于记录位置尝试的次数
+    while(book_seat_state == 'fail' and looptimes <= 12): # 如果没有预约成功b并且尝试次数小于13次则继续尝试
+        times = 0 # 用于记录发送请求的次数，因为经常会timeout，所以需要记录这个的次数。
         book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id}
         request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
-        while request_state == False or book_seat_request.status_code != 200:
+        while request_state == False or book_seat_request.status_code != 200: # 如果请求没有发送成功或者对方服务器崩溃就一直请求
             times = times + 1
             request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
-            print(times, '次尝试 ', datetime.datetime.now())
-            if(times == 20):
+            if(times == 60):
                 break
         try:
             book_seat_request_json = book_seat_request.json()
             book_seat_state = book_seat_request_json['DATA']['result']
+            book_seat_msg = book_seat_request_json['DATA']['msg']
             looptimes += 1
-        # try:
-            if('已有的预约' in book_seat_request_json['DATA']['msg']):
+            if('已有的预约' in book_seat_msg): # 已有预约表明已经有了位置，则强制中断。
                 flag = 1
+                book_seat_msg, book_seat_state = '安排上了', "true"
+                print('为{} 尝试了{}次，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
                 break
-            if('选择的位置无法预约' in book_seat_request_json['DATA']['msg']):
+            if('已被加入黑名单' in book_seat_request_json['DATA']['msg']): # 忘记签到被拉黑了直接结束本次任务！
+                book_seat_msg, book_seat_state = book_seat_request_json['DATA']['msg'], 'fail'
+                break
+            if('选择的位置无法预约' in book_seat_msg): # 位置被占了就尝试下一个位置
+                book_seat_state = 'fail'
                 seat_id -= 1
         except:
-            continue
-    if(book_seat_state == 'fail' and flag != 1):
+            book_seat_state = 'fail'
+            pass
+        print('为{} 尝试了{}次，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
+        print('反馈信息如下：{} 现在开始尝试这个位置：{} 时间：{}'.format(book_seat_request_json['DATA']['msg'], seat_id, datetime.datetime.now()))
+    if(book_seat_state == 'fail' and flag != 1): # 尝试了60次，依旧没能成功预约上
+        book_seat_state = 'fail'
         try:
-            book_seat_msg = book_seat_request_json['DATA']['msg'] + ', 都尝试过了，还是被占了'
+            book_seat_msg = book_seat_request_json['DATA']['msg'] + ', 都尝试过了'
         except:
             book_seat_msg = '很抱歉的通知你，我真的努力了，奈何大家的学习热情真的太高了，我。。。没能帮你抢到位置，所以自己再去捡漏吧。'
-    if(book_seat_request_json['DATA']['result'] != 'false' or flag == 1):
-        book_seat_msg, book_seat_state = '安排上了', "true"
+    print('为{} 尝试了{}个位置，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
     return book_seat_msg, book_seat_state
 
 # 和同伴一起抢位置
-def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3,partnerID=0,partnerWannaSeat=0):
+def book_seat_withPartner(beginTime, seat_id=26267, seatBookers_id=60000, duration=3600*3,partnerID=0,partnerWannaSeat=0): #小伙伴功能因为没有尝试的机会，所以结束条件什么的都可能会有问题，自己小心尝试吧。
     headers = get_headers()
-    flag = 0
-    times = 0
-    book_seat_state = 'f'
+    flag = 0 # 已有预约的标记
+    times = 0 # 请求发送次数的计数器
+    book_seat_state = 'fail'
     book_seat_msg = '搞事情'
-    time.sleep(60.3)  #  等待60.3秒，这个时间看电脑时间是否准确，我的服务器时间快了点，所以要多等一会。测试好这个时间可以提高成功率。
-    book_seat_content = {'beginTime': beginTime, 'duration': duration,
-                        'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id,'seats[1]':partnerWannaSeat,'seatBookers[1]':partnerID}
-    request_state, book_seat_request = send_book_seat_requests(
-        book_seat_content, headers)
-    while request_state == False or book_seat_request.status_code != 200:
-        times = times + 1
-        time.sleep(1)
-        request_state, book_seat_request = send_book_seat_requests(
-            book_seat_content, headers)
-        print(times, '次尝试 ', datetime.datetime.now())
-        if(times == 20):
-            break
-    book_seat_request_json = book_seat_request.json()
-    looptimes = 1
-    while(book_seat_request_json['DATA']['result'] == 'fail' and looptimes <= 10):
-        print(book_seat_request_json['DATA']['msg'],
-              '\n现在开始尝试备用位置', datetime.datetime.now())
-        times = 0
-        seat_id -= 0 if looptimes % 3 != 0 else 1
-        partnerWannaSeat -= 0 if looptimes % 3 != 0 else 1
-        book_seat_content = {'beginTime': beginTime, 'duration': duration,
-                             'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id, 'seats[1]': partnerWannaSeat, 'seatBookers[1]': partnerID}
-        request_state, book_seat_request = send_book_seat_requests(
-            book_seat_content, headers)
-        while request_state == False or book_seat_request.status_code != 200:
+    Hour,Mins,Secs = GetNowHourMinSec()
+    while Hour != 21 or Mins != 59 or Secs != 59: # 只要还没有到21：59：59那就一直休息
+        Hour,Mins,Secs = GetNowHourMinSec()
+        time.sleep(0.5)
+    book_seat_content = {'beginTime': beginTime, 'duration': duration, 'seats[0]': seat_id, 'seatBookers[0]': seatBookers_id,'seats[1]':partnerWannaSeat,'seatBookers[1]':partnerID}
+    request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
+    looptimes = 0 # 用于记录位置尝试的次数
+    while(book_seat_state == 'fail' and looptimes <= 12): # 如果没有预约成功b并且尝试次数小于13次则继续尝试
+        times = 0 # 用于记录发送请求的次数，因为经常会timeout，所以需要记录这个的次数。
+        request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
+        while request_state == False or book_seat_request.status_code != 200: # 如果请求没有发送成功或者对方服务器崩溃就一直请求
             times = times + 1
-            time.sleep(1)
-            request_state, book_seat_request = send_book_seat_requests(
-                book_seat_content, headers)
-            print(times, '次尝试 ', datetime.datetime.now())
-            if(times == 20):
+            request_state, book_seat_request = send_book_seat_requests(book_seat_content, headers)
+            if(times == 60):
                 break
-        book_seat_request_json = book_seat_request.json()
-        book_seat_state = book_seat_request_json['DATA']['result']
-        time.sleep(0.3)
-        looptimes += 1
         try:
-            if('已有的预约' in book_seat_request_json['DATA']['msg']):
+            book_seat_request_json = book_seat_request.json()
+            book_seat_state = book_seat_request_json['DATA']['result']
+            book_seat_msg = book_seat_request_json['DATA']['msg']
+            looptimes += 1
+            if('已有的预约' in book_seat_msg): # 已有预约表明已经有了位置，则强制中断。
                 flag = 1
+                book_seat_msg, book_seat_state = '安排上了', "true"
+                print('为{} 尝试了{}次，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
                 break
+            if('已被加入黑名单' in book_seat_request_json['DATA']['msg']): # 忘记签到被拉黑了直接结束本次任务！
+                book_seat_msg, book_seat_state = book_seat_request_json['DATA']['msg'], 'fail'
+                break
+            if('选择的位置无法预约' in book_seat_msg): # 位置被占了就尝试下一个位置
+                book_seat_state = 'fail'
+                seat_id -= 1
         except:
-            continue
-        if(book_seat_state == 'fail' and flag != 1):
-            book_seat_msg = book_seat_request_json['DATA']['msg'] + \
-                ','+'都尝试过了，还是被占了'
-    if(book_seat_request_json['DATA']['result'] != 'fail' or flag == 1):
-        book_seat_msg, book_seat_state = get_booked_seat_info(), "true"
-        while(book_seat_msg == 'TimeOut'):
-            book_seat_msg = get_booked_seat_info
-    else:
-        book_seat_msg, book_seat_state = '没抢到', "false"
+            book_seat_state = 'fail'
+            pass
+        print('为{} 尝试了{}次，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
+        print('反馈信息如下：{} 现在开始尝试这个位置：{} 时间：{}'.format(book_seat_request_json['DATA']['msg'], seat_id, datetime.datetime.now()))
+    if(book_seat_state == 'fail' and flag != 1): # 尝试了60次，依旧没能成功预约上
+        book_seat_state = 'fail'
+        try:
+            book_seat_msg = book_seat_request_json['DATA']['msg'] + ', 都尝试过了'
+        except:
+            book_seat_msg = '很抱歉的通知你，我真的努力了，奈何大家的学习热情真的太高了，我。。。没能帮你抢到位置，所以自己再去捡漏吧。'
+    print('为{} 尝试了{}个位置，结束时间：{}'.format(seatBookers_id, looptimes, datetime.datetime.now()))
     return book_seat_msg, book_seat_state
 
 # 向Server酱发送消息以进行消息通知
@@ -441,8 +426,7 @@ def job():
     if partnerFlag == 'true':
         print("with_partner\n")
         partnerID = file_json_info['partnerID']
-        partnerWannaSeat = search_seats(BeginTime, int(
-            file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
+        partnerWannaSeat = search_seats(BeginTime, int(file_json_info['partnerWannaSeat']), wanna_duration, get_true_start_seat_num(int(file_json_info['wanna_room'])))
         # print(partnerWannaSeat, '有小伙伴')
         book_seat_msg, book_seat_state = book_seat_withPartner(BeginTime, seat_id, file_json_info['id'], wanna_duration,partnerID,partnerWannaSeat)
     else:
@@ -450,7 +434,7 @@ def job():
         book_seat_msg, book_seat_state = book_seat(BeginTime, seat_id, file_json_info['id'], wanna_duration)
     send_msg(book_seat_msg, book_seat_state)
 
-# schedule使用函数，用于定时启动
+# schedule函数，用于定时启动
 # schedule.every().day.at("21:59").do(job)
 
 # 主函数

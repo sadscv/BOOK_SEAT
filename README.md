@@ -10,8 +10,9 @@
 
 ```
 pip install requests
-pip install schedule
 ```
+**~~pip install schedule~~** # 暂时放弃使用schedule，感觉使用schedule过程中存在一定的局限性，自己写的定时器更适合这个程序吧。
+
 
 接着填好脚本内注释了需要填的东西。
 
@@ -37,8 +38,11 @@ pip install schedule
         'wanna_duration': '13',  # 想要在自习室待多久
 
 ```
+</br>
 
 通知问题：使用[server酱](http://sc.ftqq.com)进行通知，先前往server酱官网进行申请与绑定，得到一个server酱的Token，将此Token替换脚本内这个函数内的
+
+</br>
 
 ```python
 # 向Server酱发送消息以进行消息通知
@@ -79,26 +83,6 @@ while True:
 ```
 注释了，然后job()取消注释，在 book_seat / book_seat_withPartner 这两个函数中的time.sleep(60.3)给相应的注释了。这样就可以立马测试程序。
 
-## 想要一直防止服务器一直运行怎么办？
-将
-```python
-while True:
-    schedule.run_pending()
-    time.sleep(1)
-# job()
-```
-替换成
-```python
-while True:
-    try:
-        schedule.run_pending()
-    except:
-        print('预约失败！',datetime.datetime.now())
-        pass
-    time.sleep(1)
-# job()
-```
-暴力解决。毕竟有太多的意外情况，总不能全都解决吧=-=
 
 ## PS
 
@@ -106,7 +90,7 @@ while True:
 
 我想了想还是把完整的代码放出来了。
 
- 完全面向过程编程，面向对象是不存在的，怎么顺手怎么来！ 
+完全面向过程编程，面向对象是不存在的，怎么顺手怎么来！ 
 
 ## PPS
 
@@ -132,6 +116,7 @@ while True:
 
 4.更新了README.MD，让脚本更易用
 
+</br>
 
 2019年6月22日 19点19分
 
@@ -142,6 +127,8 @@ while True:
 3.顺手增加了一点点注释，真的是一点点！
 
 
+</br>
+
 2019年7月2日 14点14分
 
 1.将输出流重定向到文件了，默认打开，不需要则自己注释开头增加的那几段代码。
@@ -149,6 +136,9 @@ while True:
 2.完善了使用说明，增加了测试相关的教程。
 
 3.增加了预约今天位置的功能，一般用于测试，具体使用教程看 cal_begin_time 的代码注释。
+
+
+</br>
 
 
 2019年7月6日 16点21分
@@ -159,3 +149,13 @@ while True:
 
 3.增加相应的try，防止程序意外退出。
 
+
+</br>
+
+2019年7月16日 12点54分
+
+1.修复原来存在的一些BUG
+
+2.改进了一下流程，使程序更加高效
+
+3.继续增加注释
