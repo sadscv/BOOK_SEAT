@@ -9,8 +9,8 @@ import os
 import sys
 
 # 将所有的输出重定向到文件中
-f = open('test.log', 'a', encoding='utf-8-sig')
-sys.stdout = f
+logFile = open('test.log', 'a', encoding='utf-8-sig')
+sys.stdout = logFile
 
 # 创建配置文件
 def create_json_file():
@@ -417,11 +417,9 @@ def job():
     file_json_info = Read_File_json()
     BeginTime = cal_begin_time(0,int(file_json_info['startTime']))
     # BeginTime = cal_begin_time(1,int(file_json_info['startTime'])) #如果需要预约今天的位置就注释上一行，用这一行
-    print(BeginTime, file_json_info['startTime'])
+    # print(BeginTime, file_json_info['startTime'])
     wanna_duration = 3600*int(file_json_info['wanna_duration'])
-    seat_id = search_seats(BeginTime, int(file_json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(file_json_info['wanna_room'])))
-    print(seat_id)
-    seat_id = int(seat_id)
+    seat_id = int(search_seats(BeginTime, int(file_json_info['wanna_seat']),wanna_duration,get_true_start_seat_num(int(file_json_info['wanna_room']))))
     partnerFlag = file_json_info['partnerFlag']
     if partnerFlag == 'true':
         print("with_partner\n")
@@ -432,6 +430,7 @@ def job():
     else:
         # print('没小伙伴')
         book_seat_msg, book_seat_state = book_seat(BeginTime, seat_id, file_json_info['id'], wanna_duration)
+        logFile.flush()
     send_msg(book_seat_msg, book_seat_state)
 
 # schedule函数，用于定时启动
@@ -441,6 +440,7 @@ def job():
 if __name__ == "__main__":
     init_book()
     print('滴滴滴，开始给你盯着位置啦！', datetime.datetime.now())
+    logFile.flush()
     while True:
         # schedule.run_pending()
         # time.sleep(1)
@@ -453,6 +453,8 @@ if __name__ == "__main__":
                 print('预约失败，时间：{}'.format(datetime.datetime.now()))
                 pass
         time.sleep(5)
+        logFile.flush() # 做完一次任务再更新一次日志
+    logFile.close()
     # job()
     #如果想要测试这个程序，就把上面这个while循环注释了，然后job()取消注释，在bookseat/bookseatwithpartner这两个函数中的time.sleep(60.3)给相应的注释了。
     #这样就可以立马测试程序而不需要等待到晚上。
