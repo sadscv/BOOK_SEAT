@@ -17,7 +17,7 @@ pip install requests
 接着填好脚本内注释了需要填的东西。
 
 ```python
-​        'usernum': '',#学号
+        'usernum': '',#学号
 
         'password': '',#密码
 
@@ -98,9 +98,11 @@ while True:
 
 ## PPPS
 
-本人上线了本脚本的DEMO，感兴趣的可以试一试哦！
+~~本人上线了本脚本的DEMO，感兴趣的可以试一试哦！~~
 
-传送门——》[座位预约系统](http://bookseats.cunzao.xyz:8000/index/)
+~~传送门——》~~[~~座位预约系统~~](http://baidu.com) 
+
+**暂时下线本Demo**
 
 
 
