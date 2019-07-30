@@ -17,6 +17,7 @@ def myPrint(*myPrintStr):
         temp += str(i)
     print('时间：{}，{}'.format(datetime.datetime.now(), temp))
     logFile = open('test.log','a',encoding='utf-8')
+    # 输出信息到文件，不需要则注释这个输出
     print('时间：{}，{}'.format(datetime.datetime.now(), temp), file = logFile)
 
 # 创建配置文件
@@ -63,7 +64,7 @@ def Get_cookie():
     cookie = save_cookie_to_file()
     return cookie
 
-# 获取现在的时间，返回的形式是YEAR、MONTH、DAY
+# 获取现在的日期，返回的形式是YEAR、MONTH、DAY
 def get_now_datetime():
     d = datetime.datetime.now()
     year = int(str(d)[:4])
@@ -71,6 +72,7 @@ def get_now_datetime():
     day = int(str(d)[8:10])
     return year, month, day
 
+# 获取现在的日期，返回的形式是HOUR、MINIUTE、SECONDS
 def GetNowHourMinSec():
     d = datetime.datetime.now()
     hour = int(str(d)[11:13])
